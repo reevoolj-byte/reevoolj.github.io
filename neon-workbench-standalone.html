@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Neon Workbench</title><meta name="description" content="A standalone Claude workbench: chat, staged tasks and defensive code review on your own API key.">
+<style>
+:root{--bg:#faf9f5;--side:#f2f0e8;--surf:#fff;--ink:#1f1e1d;--mute:#6b6a65;--line:#e3e0d5;--acc:#c96442;--accink:#fff;--hov:#e9e6db;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#262624;--side:#1f1e1d;--surf:#30302e;--ink:#f2f0e8;--mute:#a3a198;--line:#3d3c39;--acc:#d97757;--accink:#1f1e1d;--hov:#353432;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#262624;--side:#1f1e1d;--surf:#30302e;--ink:#f2f0e8;--mute:#a3a198;--line:#3d3c39;--acc:#d97757;--accink:#1f1e1d;--hov:#353432;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,select,textarea,input{font:inherit;color:inherit}button{cursor:pointer}
+#app{display:flex;height:100%}
+#side{width:260px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:12px;flex:none}
+.brand{font:600 1.15rem Georgia,"Times New Roman",serif;padding:6px 8px 12px}.brand i{color:var(--acc);font-style:normal}
+.nb{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:var(--surf);border-radius:10px;padding:9px 12px;width:100%;text-align:left}
+.nb:hover,.ci:hover{background:var(--hov)}
+#list{flex:1;overflow:auto;margin:14px 0}.lab{font-size:.75rem;color:var(--mute);padding:0 8px 6px}
+.ci{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.92rem}.ci.on{background:var(--hov)}
+.foot{font-size:.74rem;color:var(--mute);padding:8px}
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surf);border-radius:999px;padding:6px 14px;font-size:.88rem}.chip:hover{background:var(--hov)}
+.ic{border:0;background:none;font-size:1.3rem;padding:4px 8px;border-radius:8px;display:none}
+#feed{flex:1;overflow:auto;padding:12px 16px}.col{max-width:740px;margin:0 auto}
+#welcome{text-align:center;margin-top:12vh}#welcome h1{font:400 clamp(1.8rem,5vw,2.6rem) Georgia,"Times New Roman",serif;margin:0 0 8px}#welcome h1 i{color:var(--acc);font-style:normal}
+#welcome p{color:var(--mute);margin:0 auto 20px;max-width:46ch}
+.sug{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.msg{margin:18px 0}.msg.user{display:flex;justify-content:flex-end}
+.msg.user .b{background:var(--hov);border-radius:16px;padding:9px 14px;max-width:85%;white-space:pre-wrap}
+.msg.assistant .b{white-space:pre-wrap;overflow-wrap:anywhere}
+.b h4{margin:12px 0 4px}.b pre{background:var(--side);border:1px solid var(--line);border-radius:10px;padding:10px;overflow-x:auto;white-space:pre}.b code{background:var(--side);padding:1px 5px;border-radius:5px;font-size:.9em}.b pre code{background:none;padding:0}
+.stage{border:1px solid var(--line);background:var(--surf);border-radius:12px;padding:10px 14px;margin:10px 0;white-space:normal}
+.stage .h{display:flex;gap:8px;align-items:center;font-weight:600}.stage .st{margin-left:auto;font-size:.75rem;color:var(--mute);font-weight:400}.stage.ok .st{color:#2f9e6b}
+.stage .o{white-space:pre-wrap;margin-top:6px;font-size:.95rem}.stage .c{color:var(--mute);font-size:.8rem;margin:6px 0 0}
+.meta{font-size:.75rem;color:var(--mute);margin-top:6px}.err{color:#d6453d}
+.comp{padding:8px 16px 14px}.box{max-width:740px;margin:0 auto;background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:10px 12px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+#in{width:100%;border:0;outline:0;background:none;resize:none;max-height:200px;padding:4px}
+.row{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}.row .sp{flex:1}
+.sm{border:1px solid var(--line);background:none;border-radius:8px;padding:4px 9px;font-size:.82rem}
+#go{background:var(--acc);color:var(--accink);border:0;border-radius:10px;width:36px;height:34px;font-size:1.1rem}
+.tiny{text-align:center;font-size:.72rem;color:var(--mute);margin-top:6px}
+#dr{position:fixed;top:0;right:0;bottom:0;width:360px;max-width:100%;background:var(--bg);border-left:1px solid var(--line);padding:calc(16px + env(safe-area-inset-top,0px)) 18px 18px;overflow:auto;transform:translateX(105%);transition:transform .2s;z-index:20}
+#dr.on{transform:none}#ov{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:19;display:none}#ov.on{display:block}
+#dr h2{margin:0 0 12px;font:600 1.1rem Georgia,serif;display:flex;justify-content:space-between}
+.f{margin:14px 0}.f>label{display:block;font-size:.8rem;color:var(--mute);margin-bottom:5px}
+.f select,.f textarea{width:100%;border:1px solid var(--line);background:var(--surf);border-radius:8px;padding:7px 9px}
+.mo{display:flex;justify-content:space-between;width:100%;text-align:left;border:1px solid var(--line);background:var(--surf);border-radius:10px;padding:8px 12px;margin-bottom:6px}.mo small{color:var(--mute)}.mo.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.seg button{flex:1;border:0;background:var(--surf);padding:7px}.seg button.on{background:var(--acc);color:var(--accink)}
+.tg{display:flex;justify-content:space-between;align-items:center}
+@media(max-width:760px){#side{position:fixed;inset:0 auto 0 0;z-index:15;transform:translateX(-105%);transition:transform .2s;padding-top:calc(12px + env(safe-area-inset-top,0px))}#side.on{transform:none}.ic{display:block}}
+body{background:radial-gradient(1100px 480px at 75% -10%,color-mix(in srgb,var(--acc) 13%,transparent),transparent),var(--bg)}
+#side{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side) 93%,var(--acc)))}
+header{position:sticky;top:0;z-index:5;backdrop-filter:blur(10px)}
+.hr{display:flex;gap:8px}.hl{flex:1;min-width:0;padding-left:4px;font-size:.9rem;color:var(--mute);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.chip,.sm,.nb,.ci,.mo{transition:background .15s,border-color .15s,transform .1s}.chip:active,.sm:active{transform:scale(.97)}.sm:hover{background:var(--hov)}
+.srch,.in{width:100%;border:1px solid var(--line);background:var(--surf);border-radius:10px;padding:7px 10px;outline:0}.srch{margin-top:10px}.in{margin-bottom:6px}.srch:focus,.in:focus{border-color:var(--acc)}
+.ci{display:flex;align-items:center;gap:6px}.ci span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.del{font-style:normal;opacity:0;color:var(--mute);padding:0 4px}.ci:hover .del,.sc:hover .del{opacity:1}
+#welcome{position:relative;isolation:isolate}#welcome::before{content:"";position:absolute;inset:-40px 10% auto;height:220px;background:radial-gradient(closest-side,color-mix(in srgb,var(--acc) 24%,transparent),transparent);z-index:-1;filter:blur(20px)}#welcome h1{font-size:clamp(2rem,6vw,3rem)}
+.box{border-radius:24px;transition:box-shadow .2s,border-color .2s;box-shadow:0 8px 30px -12px rgba(0,0,0,.25)}.box:focus-within{border-color:var(--acc);box-shadow:0 8px 30px -10px color-mix(in srgb,var(--acc) 45%,transparent)}
+.msg.assistant{position:relative;padding-left:34px}.msg.assistant::before{content:"✺";position:absolute;left:0;top:0;color:var(--acc);font-size:1.25rem}
+.msg.user .b{background:color-mix(in srgb,var(--acc) 12%,var(--surf));border:1px solid var(--line)}
+.stage{border-left:3px solid var(--line)}.stage.ok{border-left-color:#2f9e6b}
+.dots i{display:inline-block;width:7px;height:7px;margin-right:4px;border-radius:50%;background:var(--acc);animation:bl 1s infinite ease-in-out}.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}@keyframes bl{0%,80%,100%{opacity:.2;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+.acts{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:.75rem;color:var(--mute);opacity:0;transition:opacity .15s}.msg:hover .acts,.msg:last-child .acts{opacity:1}.acts button{border:1px solid var(--line);background:none;border-radius:6px;padding:1px 8px;font-size:.75rem;color:var(--mute)}.acts button:hover{background:var(--hov)}.msg:not(:last-child) .acts button:nth-child(2){display:none}
+.att:not(:empty){display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}.fc{background:var(--hov);border-radius:8px;padding:2px 9px;font-size:.8rem}.fc b{cursor:pointer;margin-left:4px;color:var(--mute)}
+#sk{position:fixed;left:50%;top:50%;transform:translate(-50%,-48%) scale(.97);width:min(520px,calc(100% - 24px));max-height:80%;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:18px;z-index:21;opacity:0;pointer-events:none;transition:.18s;box-shadow:0 20px 60px rgba(0,0,0,.35)}#sk.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+#sk h2{margin:0 0 6px;font:600 1.1rem Georgia,serif;display:flex;justify-content:space-between}.mu{color:var(--mute);font-size:.88rem;margin:0 0 10px}
+.sc{position:relative;border:1px solid var(--line);background:var(--surf);border-radius:12px;padding:9px 12px;margin-bottom:8px;cursor:pointer}.sc small{display:block;color:var(--mute)}.sc.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}.sc .del{position:absolute;right:10px;top:8px}
+.rr{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;gap:6px;align-items:center;margin-bottom:6px;font-size:.85rem}.rr select{width:100%;padding:4px;min-width:0}.f.foff{opacity:.4;pointer-events:none}.sm.foff{opacity:.45}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+</style></head><body><div id="app">
+<aside id="side"><div class="brand"><i>✺</i> Neon Workbench</div>
+<button class="nb" id="new">＋ New chat</button>
+<input id="q" class="srch" placeholder="Search chats" aria-label="Search chats"><div id="list"></div>
+<div class="foot" id="tok"></div><div class="foot">Inspired by public reports on Gemini 4 Argon. Not affiliated with Google. Runs on the Anthropic API with your own key.</div></aside>
+<main>
+<header><button class="ic" id="mnu" aria-label="Menu">☰</button><span class="hl" id="ttl"></span><span class="hr"><button class="chip" id="cp">Copy chat</button><button class="chip" id="mchip"></button></span></header>
+<div id="feed"><div class="col" id="msgs"><div id="welcome"><h1><i>✺</i> <span id="hi"></span></h1><p>Chat, run long multi-stage tasks with a built-in drift check, or review code for defensive fixes. Tune everything in Settings.</p><div class="sug" id="sug"></div></div></div></div>
+<div class="comp"><div class="box"><textarea id="in" rows="1" placeholder="How can I help you today?"></textarea>
+<div id="att" class="att"></div><div class="row"><button class="sm" id="clip" aria-label="Attach files">📎</button><button class="sm" id="pst" aria-label="Save the text in the box as a source" title="Save the text in the box as a source, handy for pasted web pages">📋</button><input type="file" id="file" multiple hidden accept=".txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.log,.yml,.xml"><select class="sm" id="mode" aria-label="Mode"><option value="chat">Chat</option><option value="task">Task runner</option><option value="review">Defensive code review</option></select>
+<button class="sm" id="skb">✦ Skills <b id="skn"></b></button><button class="sm" id="set">⚙ Settings</button><span class="sp"></span><button id="go" aria-label="Send">↑</button></div></div>
+<div class="tiny">AI can make mistakes. Check important outputs. Ctrl/Cmd+K new chat · Ctrl/Cmd+/ settings · drop files to attach</div></div>
+</main></div>
+<div id="ov"></div>
+<aside id="dr" aria-label="Settings"><h2>Settings <button class="sm" id="x">Close</button></h2>
+<div class="f"><label>Anthropic API key</label><input id="key" type="password" class="in" placeholder="sk-ant-..." autocomplete="off"><div class="tg"><span>Remember on this device</span><input type="checkbox" id="krem"></div><small class="mu">Sent only to the API address below. Use a restricted key, and never share a browser profile or page copy that has your key saved. Leave empty if you use a proxy.</small></div>
+<div class="f"><label>API address</label><input data-k="base" class="in"></div>
+<div class="f tg"><span>Let Claude search the web (extra cost; must be enabled for your organization in the Anthropic Console)</span><input type="checkbox" data-k="web"></div>
+<div class="f"><label>Max searches per reply</label><select data-k="webMax"></select></div>
+<div class="f"><label>Max reply length (tokens)</label><select data-k="maxTok"></select></div>
+<div class="f"><label>Model</label><div id="models"></div></div>
+<div class="f"><label>Effort</label><div class="seg" id="eff"></div></div>
+<div class="f tg"><span><b>Response filters</b><br><small class="mu">Style, length, format, focus, skills and custom instructions. Off sends your message as written.</small></span><input type="checkbox" data-k="filters"></div>
+<div class="f"><label>Style</label><select data-k="style"></select></div>
+<div class="f"><label>Length</label><select data-k="length"></select></div>
+<div class="f"><label>Format</label><select data-k="format"></select></div>
+<div class="f"><label>Focus area</label><select data-k="focus"></select></div>
+<div class="f"><label>Task runner stages: <b id="sv"></b></label><input type="range" min="3" max="6" data-k="stages" style="width:100%"></div>
+<div class="f tg"><span>Drift check after tasks</span><input type="checkbox" data-k="drift"></div>
+<div class="f"><label>Theme</label><select data-k="theme"></select></div><div class="f"><label>Tools Claude may use</label><div class="tg"><span>Date and time</span><input type="checkbox" data-k="tClock"></div><div class="tg"><span>Calculator</span><input type="checkbox" data-k="tCalc"></div></div>
+<div class="f"><label>Custom instructions</label><textarea data-k="custom" rows="3" placeholder="Anything Claude should always keep in mind"></textarea></div>
+<div class="f"><label>Model and effort for each task</label><div id="roles"></div></div>
+<div class="f"><label>System prompt</label><textarea data-k="sys" rows="3" placeholder="Optional. Sent with every request, even with filters off"></textarea></div>
+<div class="f"><label>Messages remembered in chat</label><select data-k="hist"></select></div>
+<div class="f tg"><span>Stream replies as they are written</span><input type="checkbox" data-k="stream"></div>
+<div class="f tg"><span>Show which model answered</span><input type="checkbox" data-k="showModel"></div>
+<div class="f"><label>Token use</label><div class="tg"><span>Answer simple math and date or time questions in the browser, with no model call</span><input type="checkbox" data-k="local"></div><div class="tg"><span>Replay identical requests for 5 minutes (Retry always asks fresh)</span><input type="checkbox" data-k="cache"></div></div>
+<div class="f"><label>Settings JSON</label><textarea id="js" rows="3" class="in" placeholder="Export to copy, or paste here and Import"></textarea><button class="sm" id="ex">Export</button> <button class="sm" id="im">Import</button></div>
+<button class="sm" id="rs">Reset to defaults</button></aside>
+<div id="sk" role="dialog" aria-label="Skills"><h2>Skills <button class="sm" id="skx">Done</button></h2><p class="mu">Skills are reusable instructions. Switch on any that should shape every reply, or write your own.</p><div id="skl"></div><div class="f"><label>Create a skill</label><input id="skn2" class="in" placeholder="Name"><textarea id="skt" class="in" rows="2" placeholder="What should Claude do differently?"></textarea><button class="sm" id="ska">Add skill</button></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const M=[['claude-fable-5-1','Fable 5.1','Most capable','complex'],['claude-opus-5-5','Opus 5.5','Deep reasoning','complex'],['claude-sonnet-5-5','Sonnet 5.5','Balanced','default'],['claude-haiku-5-5','Haiku 5.5','Fastest','quick'],['claude-sonnet-4-6','Sonnet 4.6','Previous generation','default']];
+const AUTO={chat:'claude-sonnet-5-5',plan:'claude-opus-5-5',stage:'claude-sonnet-5-5',check:'claude-haiku-5-5',rev:'claude-fable-5-1'};
+const O={webMax:['1','3','5','10'],maxTok:['1024','2048','4096','8192','16000'],hist:['2','6','10','20','40','all'],theme:['Auto','Light','Dark'],style:['Normal','Concise','Explanatory','Formal','Friendly'],length:['Short','Balanced','Detailed'],format:['Auto','Prose','Bullet points','Table where useful'],focus:['General','Coding','Security defense','Research','Writing']};
+const D={model:'claude-sonnet-5-5',effort:'medium',style:'Normal',length:'Balanced',format:'Auto',focus:'General',stages:4,drift:true,custom:'',mode:'chat',theme:'Auto',tClock:true,tCalc:true,skills:[],filters:true,sys:'',hist:'20',stream:true,showModel:true,local:true,cache:true,base:'https://api.anthropic.com',web:false,webMax:'5',maxTok:'4096'};
+const ld=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))||f}catch(e){return f}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let S=Object.assign({},D,ld('nw-s',{})),chats=ld('nw-c',[]),cur=null,sample=null,ac=null,busy=false;
+const esc=t=>t.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const md=t=>esc(t).replace(/```\w*\n([\s\S]*?)(```|$)/g,'<pre><code>$1</code></pre>').replace(/^#{1,4} (.*)$/gm,'<h4>$1</h4>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/^[-*] /gm,'• ');
+const prefs=()=>!S.filters?(S.sys?'System instructions: '+S.sys+'\n':'')+(files.length?'\nAttached sources (read them with the read_source tool): '+files.map(f=>f.name).join(', '):''):(S.sys?'System instructions: '+S.sys+'\n':'')+`Response preferences: style ${S.style}; length ${S.length}; format ${S.format}; focus area ${S.focus}.`+(S.custom?` Custom instructions: ${S.custom}`:'')+(actSk().length?'\nActive skills (follow them):\n'+actSk().map(s=>`- ${s.name}: ${s.text}`).join('\n'):'')+(files.length?'\nAttached sources (read them with the read_source tool): '+files.map(f=>f.name).join(', '):'');
+const mod=r=>{let id=S.model;const o=r&&S['m'+r];if(o==='auto')id=AUTO[r];else if(o&&o!=='default')id=o;return M.find(m=>m[0]===id)||M[2]};
+const opts=(o,r)=>{const m=mod(r),e=S['e'+r],x=Object.assign({signal:ac.signal,cache:!!S.cache&&!fresh,model:m[0],modelTier:m[3],web:(r==='chat'||r==='stage')&&!!S.web,effort:e&&e!=='default'?e:S.effort},o||{}),t=tools();if(t.length)x.tools=t;return x};
+const persist=()=>{sv('nw-s',S);sv('nw-c',chats.slice(0,30))};
+function ui(){
+ $('#mchip').textContent=mod()[1]+' · '+S.effort+' ▾';$('#mode').value=S.mode;$('#sv').textContent=S.stages;th();skn();adv();
+ $('#models').innerHTML=M.map(m=>`<button class="mo ${m[0]===S.model?'on':''}" data-m="${m[0]}"><span>${m[1]}</span><small>${m[2]}</small></button>`).join('');
+ $('#eff').innerHTML=['low','medium','high'].map(e=>`<button class="${e===S.effort?'on':''}" data-e="${e}">${e[0].toUpperCase()+e.slice(1)}</button>`).join('');
+ document.querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k;if(el.tagName==='SELECT'&&!el.options.length)el.innerHTML=O[k].map(v=>`<option>${v}</option>`).join('');el.type==='checkbox'?el.checked=S[k]:el.value=S[k]});
+ $('#in').placeholder={chat:'How can I help you today?',task:'Describe a goal to break into stages…',review:'Paste code to review for vulnerabilities…'}[S.mode];
+}
+function side(){const q=($('#q').value||'').toLowerCase();$('#ttl').textContent=cur&&cur.title||'';$('#list').innerHTML=(chats.length?'<div class="lab">Recents</div>':'')+chats.filter(c=>(c.title||'new chat').toLowerCase().includes(q)).map(c=>`<button class="ci ${c===cur?'on':''}" data-id="${c.id}"><span>${esc(c.title||'New chat')}</span><i class="del" data-del="${c.id}">✕</i></button>`).join('')}
+function open(c){cur=c;$('#msgs').innerHTML='';c.msgs.forEach(m=>add(m.role,m.text));if(!c.msgs.length)welcome();side();$('#side').classList.remove('on')}
+function newChat(){const c={id:Date.now(),title:'',msgs:[]};chats.unshift(c);open(c)}
+function welcome(){const h=new Date().getHours();$('#msgs').innerHTML=`<div id="welcome"><h1><i>✺</i> ${h<12?'Good morning':h<18?'Good afternoon':'Good evening'}</h1><p>Chat, run long multi-stage tasks with a built-in drift check, or review code for defensive fixes. Tune everything in Settings.</p><div class="sug" id="sug"></div></div>`;
+ [['task','Plan a launch for a small bakery’s online store'],['chat','Explain how long-context models stay on task'],['review','def get(u):\n    return db.execute("SELECT * FROM users WHERE id=" + u)']].forEach(([m,t])=>{const b=document.createElement('button');b.className='chip';b.textContent=t.split('\n')[0].slice(0,46);b.onclick=()=>{S.mode=m;ui();$('#in').value=t;$('#in').focus()};$('#sug').append(b)})}
+function add(role,text){const w=document.createElement('div');w.className='msg '+role;const b=document.createElement('div');b.className='b';role==='user'?b.textContent=text:b.innerHTML=md(text);w.append(b);if(role==='assistant'&&text)acts(w,text);$('#msgs').append(w);$('#feed').scrollTop=1e9;return b}
+function errT(e){return e&&e.name==='AbortError'?'Stopped.':e&&e.code==='no_key'?'Add your Anthropic API key in Settings first.':e&&e.code==='bad_key'?'The API key was rejected. Check it in Settings.':e&&e.code==='rate_limited'?'Rate limited. Wait a moment and retry.':'Something went wrong: '+((e&&e.message)||e)}
+function tag(el,r){const a=r&&r.modelApplied;if(r&&r.sources&&r.sources.length){const d=document.createElement('div');d.className='meta';d.append('Sources: ');r.sources.filter(s=>/^https?:/.test(s.url)).slice(0,8).forEach((s,i)=>{const l=document.createElement('a');l.href=s.url;l.target='_blank';l.rel='noopener noreferrer';l.textContent=(s.title||s.url).slice(0,50);l.style.color='var(--acc)';if(i)d.append(' \u00b7 ');d.append(l)});el.append(d)}if(a&&S.showModel){const d=document.createElement('div');d.className='meta';d.textContent='Model used: '+(typeof a==='string'?a:a.model||JSON.stringify(a));el.append(d)}}
+async function runChat(el){
+ const h=cur.msgs.slice(-S.hist).map(m=>({role:m.role,content:m.text}));while(h.length>1&&h[0].role!=='user')h.shift();if(prefs())h[h.length-1].content+='\n\n['+prefs()+']';
+ const r=await sample(h,opts({onText:S.stream?({text})=>{el.innerHTML=md(text)}:undefined},'chat'));el.innerHTML=md(r.text);tag(el,r);return r.text}
+async function runReview(code,el){
+ const r=await sample(`You are a defensive application-security reviewer. ${prefs()}\nReview the code below. For each finding, ordered by severity, give: Location, Issue (with CWE if known), Impact in one sentence, and a Fix as patched code. Do not write exploits or attack payloads. If nothing is wrong, say so. End with a three-item hardening checklist.\n\n\`\`\`\n${code}\n\`\`\``,opts({onText:S.stream?({text})=>{el.innerHTML=md(text)}:undefined},'rev'));el.innerHTML=md(r.text);tag(el,r);return r.text}
+async function runTask(goal,el){
+ el.innerHTML='<div class="meta">Planning…</div>';
+ const p=await sample.json(`${prefs()}\nYou are a long-horizon planning agent. Break this goal into ${S.stages} sequential stages. Each stage yields a concrete work product and has a verifiable check.\nGoal: ${goal}\nReturn JSON only: {"stages":[{"title":"","objective":"","check":""}]}`,opts({},'plan'));
+ const st=((p&&p.stages)||[]).slice(0,S.stages);if(!st.length)throw new Error('No plan was returned.');
+ el.innerHTML='';const done=[];let all='**Goal:** '+goal+'\n\n';
+ const els=st.map((s,i)=>{const d=document.createElement('div');d.className='stage';d.innerHTML='<div class="h"><span></span><span class="st">queued</span></div><div class="o"></div><p class="c"></p>';d.querySelector('.h span').textContent=(i+1)+'. '+s.title;d.querySelector('.c').textContent='Check: '+s.check;el.append(d);return d});
+ for(let i=0;i<st.length;i++){
+  const d=els[i],o=d.querySelector('.o');d.querySelector('.st').textContent='working…';
+  const prior=done.map((x,j)=>`Stage ${j+1} (${x.t}):\n${x.x.slice(0,1200)}`).join('\n\n');
+  const r=await sample(`${prefs()}\nGoal: ${goal}\nPlan: ${st.map((s,j)=>(j+1)+'. '+s.title).join('; ')}\nCompleted so far:\n${prior||'none'}\n\nDo Stage ${i+1}: ${st[i].title} — ${st[i].objective}. Produce the actual work product, not a description of it. It must satisfy this check: ${st[i].check}`,opts({onText:S.stream?({text})=>{o.textContent=text;$('#feed').scrollTop=1e9}:undefined},'stage'));
+  done.push({t:st[i].title,x:r.text});o.innerHTML=md(r.text);d.querySelector('.st').textContent='done';d.classList.add('ok');all+=`### ${i+1}. ${st[i].title}\n${r.text}\n\n`}
+ if(S.drift){
+  const v=document.createElement('div');v.className='meta';v.textContent='Running drift check…';el.append(v);
+  const j=await sample.json(`Goal: ${goal}\nStage outputs:\n${done.map((x,i)=>`${i+1}. ${x.t}: ${x.x.slice(0,900)}`).join('\n')}\nJudge whether the work stayed aligned with the goal. Return JSON only: {"on_track":true,"confidence":0,"drift":"","gaps":[""]}`,opts({modelTier:'quick'},'check'));
+  const txt=`Drift check: ${j.on_track?'on track':'drift detected'} (${j.confidence}% confidence). ${j.drift||''}${(j.gaps||[]).filter(Boolean).length?' Gaps: '+j.gaps.filter(Boolean).join('; '):''}`;
+  v.textContent=txt;all+=txt}
+ return all}
+async function send(){
+ if(busy){ac&&ac.abort();return}
+ const t=$('#in').value.trim();if(!t)return;
+ const lc=S.mode==='chat'?local(t):null;if(!sample&&lc===null){alert('Claude is not connected in this view. Open the page from claude.ai and approve the access prompt.');return}
+ if(!cur)newChat();
+ cur.msgs.push({role:'user',text:t});if(cur.msgs.length===1)cur.title=t.slice(0,40);
+ if(cur.msgs.length===1)$('#msgs').innerHTML='';add('user',t);$('#in').value='';fit();if(lc!==null){add('assistant',lc);cur.msgs.push({role:'assistant',text:lc});U.saved++;use();side();persist();return}
+ const el=add('assistant','');el.innerHTML='<span class="dots"><i></i><i></i><i></i></span>';const t0=Date.now();busy=true;$('#go').textContent='■';ac=new AbortController();
+ try{const f={chat:runChat,task:runTask,review:runReview}[S.mode];const text=await(S.mode==='chat'?f(el):f(t,el));cur.msgs.push({role:'assistant',text});acts(el.parentNode,text,t0)}
+ catch(e){cur.msgs.pop();const p=document.createElement('p');p.className='err';p.textContent=errT(e);el.append(p)}
+ busy=false;fresh=false;$('#go').textContent='↑';side();persist()}
+const fit=()=>{const i=$('#in');i.style.height='auto';i.style.height=Math.min(i.scrollHeight,200)+'px'};
+const drawer=on=>{$('#dr').classList.toggle('on',on);$('#ov').classList.toggle('on',on)};
+$('#go').onclick=send;$('#in').oninput=fit;$('#in').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
+$('#new').onclick=newChat;$('#mnu').onclick=()=>$('#side').classList.toggle('on');
+$('#set').onclick=$('#mchip').onclick=()=>drawer(true);$('#x').onclick=$('#ov').onclick=()=>drawer(false);
+$('#mode').onchange=e=>{S.mode=e.target.value;ui();persist()};
+$('#list').onclick=e=>{const d=e.target.closest('[data-del]');if(d){const id=d.dataset.del;chats=chats.filter(c=>c.id!=id);if(cur&&cur.id==id){cur=null;welcome()}side();persist();return}const b=e.target.closest('[data-id]');if(b)open(chats.find(c=>c.id==b.dataset.id))};
+$('#dr').addEventListener('click',e=>{const m=e.target.closest('[data-m]'),f=e.target.closest('[data-e]');if(m)S.model=m.dataset.m;if(f)S.effort=f.dataset.e;if(m||f){ui();persist()}});
+document.querySelectorAll('[data-k]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.k;S[k]=el.type==='checkbox'?el.checked:el.type==='range'?+el.value:el.value;ui();persist()}));
+$('#rs').onclick=()=>{S=Object.assign({},D);ui();persist()};
+const PR=[['rev','Code reviewer','Review code for bugs, security flaws and readability. Point to specific lines.'],['sum','Executive summary','Lead with the conclusion, then three to five key points and next steps.'],['res','Research analyst','Separate facts from inferences, flag uncertainty, and say what evidence would change the answer.'],['edit','Sharp editor','Tighten prose, cut filler, keep the author’s voice, and briefly explain major edits.'],['thr','Threat modeler','Identify assets, trust boundaries and abuse cases, then rank mitigations. Defensive only.'],['eli','Explain simply','Use plain language and one concrete analogy. Avoid jargon.']];
+let CS=ld('nw-sk',[]),files=[];
+const allSk=()=>PR.map(p=>({id:p[0],name:p[1],text:p[2]})).concat(CS);
+const actSk=()=>allSk().filter(s=>(S.skills||[]).includes(s.id));
+function skn(){const n=actSk().length;$('#skn').textContent=n?'('+n+')':''}
+function th(){const t=S.theme||'Auto';t==='Auto'?document.documentElement.removeAttribute('data-theme'):document.documentElement.dataset.theme=t.toLowerCase()}
+function skui(){$('#skl').innerHTML=allSk().map(s=>`<div class="sc ${(S.skills||[]).includes(s.id)?'on':''}" data-s="${s.id}"><b>${esc(s.name)}</b><small>${esc(s.text)}</small>${s.id[0]==='c'&&/^c\d/.test(s.id)?'<i class="del" data-ds="'+s.id+'">✕</i>':''}</div>`).join('')}
+function calc(s){let i=0;const p=()=>{while(s[i]===' ')i++};const num=()=>{p();if(s[i]==='('){i++;const v=add();p();i++;return v}if(s[i]==='-'){i++;return -num()}const m=/^\d*\.?\d+/.exec(s.slice(i));if(!m)throw new Error('Bad expression');i+=m[0].length;return +m[0]};const pw=()=>{let v=num();p();if(s[i]==='^'){i++;v=Math.pow(v,pw())}return v};const mul=()=>{let v=pw();for(p();'*/%'.includes(s[i]||'#');p()){const o=s[i++],r=pw();v=o==='*'?v*r:o==='/'?v/r:v%r}return v};function add(){let v=mul();for(p();'+-'.includes(s[i]||'#');p()){const o=s[i++],r=mul();v=o==='+'?v+r:v-r}return v}const r=add();p();if(i<s.length)throw new Error('Bad expression');return r}
+function tools(){const t=[];
+ if(S.tClock)t.push({name:'get_datetime',description:'Current local date and time of the user.',inputSchema:{type:'object',properties:{}},execute:()=>new Date().toString()});
+ if(S.tCalc)t.push({name:'calculate',description:'Evaluate an arithmetic expression using + - * / % ^ and parentheses.',inputSchema:{type:'object',properties:{expression:{type:'string'}},required:['expression']},execute:({expression})=>String(calc(String(expression)))});
+ if(files.length)t.push({name:'read_source',description:'Read an attached source file by its exact name.',inputSchema:{type:'object',properties:{name:{type:'string'}},required:['name']},execute:({name})=>{const f=files.find(x=>x.name===name);if(!f)throw new Error('No such file');return f.text.slice(0,20000)}});
+ return t}
+function acts(w,text,t0){const a=document.createElement('div');a.className='acts';const cb=document.createElement('button');cb.textContent='Copy';cb.onclick=async()=>{try{await navigator.clipboard.writeText(text);cb.textContent='Copied'}catch(e){cb.textContent='Copy failed'}setTimeout(()=>cb.textContent='Copy',1500)};const rb=document.createElement('button');rb.textContent='Retry';rb.onclick=regen;const m=document.createElement('span');m.textContent=(t0?((Date.now()-t0)/1000).toFixed(1)+'s · ':'')+text.split(/\s+/).filter(Boolean).length+' words';a.append(cb,rb,m);w.append(a)}
+function regen(){if(busy||!cur||cur.msgs.length<2)return;const u=cur.msgs[cur.msgs.length-2];if(u.role!=='user')return;cur.msgs.splice(-2);const n=$('#msgs').querySelectorAll('.msg');n[n.length-1].remove();n[n.length-2].remove();$('#in').value=u.text;fresh=true;send()}
+function att(){$('#att').innerHTML=files.map((f,i)=>`<span class="fc">📄 ${esc(f.name)} <b data-r="${i}">✕</b></span>`).join('')}
+async function addFiles(fl){for(const f of fl){if(files.length>=6)break;try{files.push({name:f.name,text:(await f.text()).slice(0,60000)})}catch(e){}}att()}
+const closeAll=()=>{drawer(false);$('#sk').classList.remove('on')};
+$('#clip').onclick=()=>$('#file').click();$('#file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+$('#att').onclick=e=>{const r=e.target.closest('[data-r]');if(r){files.splice(+r.dataset.r,1);att()}};
+$('.box').addEventListener('dragover',e=>e.preventDefault());$('.box').addEventListener('drop',e=>{e.preventDefault();addFiles(e.dataTransfer.files)});
+$('#q').oninput=side;$('#ov').onclick=closeAll;$('#skx').onclick=closeAll;
+$('#skb').onclick=()=>{skui();$('#sk').classList.add('on');$('#ov').classList.add('on')};
+$('#skl').onclick=e=>{const d=e.target.closest('[data-ds]');if(d){const id=d.dataset.ds;CS=CS.filter(s=>s.id!==id);S.skills=(S.skills||[]).filter(x=>x!==id);sv('nw-sk',CS)}else{const c=e.target.closest('[data-s]');if(!c)return;const id=c.dataset.s,a=S.skills||[];S.skills=a.includes(id)?a.filter(x=>x!==id):a.concat(id)}persist();skui();skn()};
+$('#ska').onclick=()=>{const n=$('#skn2').value.trim(),t=$('#skt').value.trim();if(!n||!t)return;CS.push({id:'c'+Date.now(),name:n,text:t});sv('nw-sk',CS);$('#skn2').value=$('#skt').value='';skui()};
+$('#cp').onclick=async()=>{if(!cur||!cur.msgs.length)return;try{await navigator.clipboard.writeText(cur.msgs.map(m=>(m.role==='user'?'**You**\n':'**Claude**\n')+m.text).join('\n\n'));$('#cp').textContent='Copied'}catch(e){$('#cp').textContent='Copy failed'}setTimeout(()=>$('#cp').textContent='Copy chat',1500)};
+document.addEventListener('keydown',e=>{const m=e.metaKey||e.ctrlKey;if(e.key==='Escape')closeAll();else if(m&&e.key.toLowerCase()==='k'){e.preventDefault();newChat()}else if(m&&e.key==='/'){e.preventDefault();drawer(true)}});
+let fresh=false,U={i:0,o:0,calls:0,saved:0};
+const fmt=n=>n>=1000?(n/1000).toFixed(1)+'k':n;
+function use(){$('#tok').textContent='Session use (from API usage): '+fmt(U.i+U.o)+' tokens · '+U.calls+' model calls · '+U.saved+' answered locally'}
+function meter(s){const est=t=>Math.ceil((typeof t==='string'?t:JSON.stringify(t||'')).length/4);
+ const f=async(i,o)=>{U.calls++;U.i+=est(i)+est(o&&o.tools?o.tools.map(t=>t.name+t.description):'');use();const r=await s(i,o);U.o+=est(r.text);use();return r};
+ f.json=async(i,o)=>{U.calls++;U.i+=est(i);use();const r=await s.json(i,o);U.o+=est(r);use();return r};
+ f.limits=s.limits;return f}
+function local(t){if(!S.local)return null;const raw=t.trim(),re=/^(what is|what’s|what's|calculate|compute|calc)\s+/i,pre=re.test(raw),s=raw.replace(re,'').replace(/[?=\s]+$/,'').replace(/(\d)\s*[x×]\s*(?=[\d(])/gi,'$1*').replace(/(\d),(?=\d{3})/g,'$1');
+ if(/^[\d+\-*/().%\s^]+$/.test(s)&&/\d\s*[-+*/%^]\s*[\d(.]/.test(s)&&(pre||(/[*/^(]/.test(s)&&!/\d+[\/-]\d+[\/-]\d+/.test(s)))){try{const v=calc(s);if(isFinite(v))return s+' = **'+(+v.toFixed(10))+'**\n(calculated locally)'}catch(e){}}
+ const q=raw.toLowerCase().replace(/[’']/g,'').replace(/[?.!]+$/,'');
+ if(['what time is it','what is the time','whats the time','what is the date','whats the date','what is the date today','whats the date today','what day is it','what is todays date','whats todays date','current time','current date'].includes(q))return new Date().toLocaleString([],{dateStyle:'full',timeStyle:'short'})+'\n(from your device clock)';
+ return null}
+$('#pst').onclick=()=>{const t=$('#in').value.trim();if(!t||files.length>=6)return;files.push({name:'Pasted text '+(files.length+1),text:t.slice(0,60000)});$('#in').value='';fit();att()};
+use();
+
+let K=(()=>{try{return localStorage.getItem('nw-key')||sessionStorage.getItem('nw-key')||''}catch(e){return ''}})();
+function setKey(v,rem){K=v.trim();try{localStorage.removeItem('nw-key');sessionStorage.removeItem('nw-key');if(K)(rem?localStorage:sessionStorage).setItem('nw-key',K)}catch(e){}}
+const CK=new Map(),DEF='https://api.anthropic.com';
+function makeApi(){
+ const base=()=>(S.base||DEF).trim().replace(/\/+$/,'');
+ const hdr=()=>{const h={'content-type':'application/json','anthropic-version':'2023-06-01'};if(base()===DEF)h['anthropic-dangerous-direct-browser-access']='true';if(K)h['x-api-key']=K;return h};
+ const post=(b,o)=>fetch(base()+'/v1/messages',{method:'POST',headers:hdr(),body:JSON.stringify(b),signal:o.signal});
+ async function call(body,o){
+  let res=await post(body,o);
+  if(res.status===400&&body.output_config){const b2=Object.assign({},body);delete b2.output_config;res=await post(b2,o)}
+  if(!res.ok){let m=res.statusText||'Request failed';try{m=(await res.json()).error.message}catch(e){}const e=new Error(m);e.code=res.status===429?'rate_limited':res.status===401?'bad_key':'api_error';throw e}
+  return res}
+ async function turn(body,o,onChunk){
+  const res=await call(body,o),rd=res.body.getReader(),dec=new TextDecoder();let buf='',blocks=[],stop='';
+  for(;;){const {done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+   while((i=buf.indexOf('\n\n'))>=0){const ev=buf.slice(0,i);buf=buf.slice(i+2);const d=ev.split('\n').find(l=>l.startsWith('data: '));if(!d)continue;let j;try{j=JSON.parse(d.slice(6))}catch(e){continue}
+    if(j.type==='message_start')U.i+=(j.message.usage.input_tokens||0);
+    else if(j.type==='content_block_start'){const b=j.content_block;if(b.type==='text')b.text='';if(b.type==='tool_use'||b.type==='server_tool_use')b._j='';blocks[j.index]=b}
+    else if(j.type==='content_block_delta'){const b=blocks[j.index],t=j.delta;if(t.type==='text_delta'){b.text+=t.text;onChunk(t.text)}else if(t.type==='input_json_delta')b._j+=t.partial_json}
+    else if(j.type==='content_block_stop'){const b=blocks[j.index];if(b&&b._j!==undefined){try{b.input=b._j?JSON.parse(b._j):{}}catch(e){b.input={}}delete b._j}}
+    else if(j.type==='message_delta'){stop=j.delta.stop_reason||stop;U.o+=(j.usage&&j.usage.output_tokens)||0}
+    else if(j.type==='error'){const e=new Error(j.error.message);e.code='api_error';throw e}}}
+  use();return{blocks:blocks.filter(Boolean),stop}}
+ async function run(input,o,web){
+  o=o||{};const msgs=(typeof input==='string'?[{role:'user',content:input}]:input).map(m=>({role:m.role,content:m.content}));
+  if(!K&&base()===DEF){const e=new Error('No API key');e.code='no_key';throw e}
+  const ck=JSON.stringify([o.model,msgs,!!web]),hit=o.cache&&CK.get(ck);
+  if(hit&&Date.now()-hit.t<3e5){o.onText&&o.onText({text:hit.r.text});return Object.assign({},hit.r,{cached:true})}
+  const tl=(o.tools||[]).map(t=>({name:t.name,description:t.description,input_schema:t.inputSchema||{type:'object',properties:{}}}));
+  if(web)tl.push({type:'web_search_20250305',name:'web_search',max_uses:+S.webMax||5});
+  let text='',srcs=[];
+  for(let n=0;n<8;n++){
+   if(n&&text&&!/\s$/.test(text))text+='\n\n';
+   const body={model:o.model,max_tokens:+S.maxTok||4096,messages:msgs,stream:true};if(tl.length)body.tools=tl;if(o.effort)body.output_config={effort:o.effort};
+   const {blocks,stop}=await turn(body,o,c=>{text+=c;o.onText&&o.onText({text})});
+   blocks.forEach(b=>{if(b.type==='web_search_tool_result'&&Array.isArray(b.content))b.content.forEach(x=>x.url&&srcs.push({title:x.title||x.url,url:x.url}))});
+   if(stop!=='tool_use'&&stop!=='pause_turn')break;
+   msgs.push({role:'assistant',content:blocks.map(b=>b.type==='text'?{type:'text',text:b.text}:(b.type==='tool_use'||b.type==='server_tool_use')?{type:b.type,id:b.id,name:b.name,input:b.input}:b).filter(b=>b.type!=='text'||b.text)});
+   if(stop==='tool_use'){const rs=[];for(const b of blocks.filter(b=>b.type==='tool_use')){let out,err=false;try{const t=(o.tools||[]).find(x=>x.name===b.name);out=String(await t.execute(b.input))}catch(e){out=String(e.message||e);err=true}rs.push({type:'tool_result',tool_use_id:b.id,content:out,is_error:err})}msgs.push({role:'user',content:rs})}}
+  const r={text,truncated:false,modelApplied:o.model,sources:[...new Map(srcs.map(s=>[s.url,s])).values()]};
+  if(o.cache)CK.set(ck,{t:Date.now(),r});return r}
+ const f=(i,o)=>run(i,o,o&&o.web);
+ f.json=async(i,o)=>{const r=await run(i,Object.assign({},o,{onText:null,cache:false}),false),m=r.text.match(/[\[{][\s\S]*[\]}]/);return JSON.parse(m?m[0]:r.text)};
+ return f}
+const RL=[['chat','Chat'],['plan','Task planner'],['stage','Task stages'],['check','Drift check'],['rev','Code review']];
+function adv(){const r=$('#roles');if(!r)return;
+ if(!r.innerHTML){const mo='<option value="default">Default model</option><option value="auto">Auto (best fit)</option>'+M.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join(''),eo=['default','low','medium','high'].map(v=>`<option value="${v}">${v==='default'?'Default effort':v}</option>`).join('');
+  r.innerHTML=RL.map(x=>`<div class="rr"><span>${x[1]}</span><select class="sm" data-k2="m${x[0]}">${mo}</select><select class="sm" data-k2="e${x[0]}">${eo}</select></div>`).join('')}
+ r.querySelectorAll('[data-k2]').forEach(s=>s.value=S[s.dataset.k2]||'default');
+ document.querySelectorAll('[data-k=style],[data-k=length],[data-k=format],[data-k=focus],[data-k=custom]').forEach(e=>e.closest('.f').classList.toggle('foff',!S.filters));
+ $('#skb').classList.toggle('foff',!S.filters)}
+$('#roles').onchange=e=>{const k=e.target.dataset.k2;if(k){S[k]=e.target.value;persist();ui()}};
+$('#ex').onclick=async()=>{const j=JSON.stringify(S,null,1);$('#js').value=j;try{await navigator.clipboard.writeText(j);$('#ex').textContent='Copied'}catch(e){}setTimeout(()=>$('#ex').textContent='Export',1500)};
+$('#im').onclick=()=>{try{S=Object.assign({},D,JSON.parse($('#js').value));ui();persist();$('#im').textContent='Imported'}catch(e){$('#im').textContent='Invalid JSON'}setTimeout(()=>$('#im').textContent='Import',1500)};
+ui();welcome();side();
+sample=makeApi();$('#key').value=K;try{$('#krem').checked=!!localStorage.getItem('nw-key')}catch(e){}
+$('#key').oninput=$('#krem').onchange=()=>setKey($('#key').value,$('#krem').checked);
+if(!K)drawer(true);
+</script></body></html>
